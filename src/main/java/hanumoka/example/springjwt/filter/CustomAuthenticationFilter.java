@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Slf4j
@@ -72,8 +73,17 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     }
 
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
         log.error("unsuccessfulAuthentication ...");
         SecurityContextHolder.clearContext();
+
+        log.error("Error logging in: {}", exception.getMessage());
+        // 토큰이 유효하지 않은 경우
+        response.setHeader("error", exception.getMessage());
+        response.setStatus(FORBIDDEN.value());
+        Map<String, String> error = new HashMap<>();
+        error.put("error_message", exception.getMessage());
+        response.setContentType(APPLICATION_JSON_VALUE);
+        new ObjectMapper().writeValue(response.getOutputStream(), error);
     }
 }
